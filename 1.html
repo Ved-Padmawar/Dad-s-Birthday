@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dad OS v5.0 - Cinematic Edition</title>
+  
+  <!-- Core libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;900&family=Orbitron:wght@400;500;700;900&family=Roboto+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary-color: #00e5ff;
+      --secondary-color: #81fbb8;
+      --accent-color: #ff3d7f;
+      --dark-bg: #0a0a14;
+      --terminal-bg: #0c0c17;
+      --text-color: #e0e0ff;
+      --code-bg: rgba(12, 18, 32, 0.8);
+      --panel-bg: rgba(14, 20, 44, 0.75);
+      --glow-primary: 0 0 15px rgba(0, 229, 255, 0.7);
+      --font-mono: 'Roboto Mono', monospace;
+      --font-display: 'Orbitron', sans-serif;
+      --font-text: 'Montserrat', sans-serif;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background-color: var(--dark-bg);
+      color: var(--text-color);
+      font-family: var(--font-text);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    
+    /* Background elements */
+    .starfield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      overflow: hidden;
+    }
+    
+    .star {
+      position: absolute;
+      background-color: #fff;
+      border-radius: 50%;
+      z-index: 1;
+    }
+    
+    .grid-background {
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+      left: 0;
+      top: 0;
+      background-image: linear-gradient(rgba(0, 229, 255, 0.07) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0, 229, 255, 0.07) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-position: center center;
+      perspective: 1000px;
+      transform-style: preserve-3d;
+      transform: rotateX(60deg) translateZ(-100px);
+      z-index: 2;
+      opacity: 0.2;
+    }
+    
+    .vignette {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.6) 100%);
+      pointer-events: none;
+      z-index: 5;
+    }
+    
+    /* Audio controls */
+    .audio-controls {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      opacity: 0.7;
+      transition: opacity 0.3s;
+    }
+    
+    .audio-controls:hover {
+      opacity: 1;
+    }
+    
+    .music-toggle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--code-bg);
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--glow-primary);
+      transition: all 0.3s;
+    }
+    
+    .music-toggle:hover {
+      transform: scale(1.1);
+      background-color: rgba(0, 229, 255, 0.2);
+    }
+    
+    /* Loading screen */
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: var(--dark-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 1s ease-out;
+    }
+    
+    .loading-title {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      color: var(--primary-color);
+      margin-bottom: 2rem;
+      text-shadow: var(--glow-primary);
+    }
+    
+    .loading-progress-container {
+      width: 300px;
+      height: 4px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      margin: 1.5rem auto;
+      overflow: hidden;
+    }
+    
+    .loading-progress {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      box-shadow: var(--glow-primary);
+      border-radius: 2px;
+      transition: width 0.5s;
+    }
+    
+    .loading-status {
+      color: var(--text-color);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      margin-top: 1rem;
+      height: 1.5rem;
+      opacity: 0.8;
+    }
+    
+    /* Terminal interface */
+    .terminal-container {
+      position: absolute;
+      width: 700px;
+      max-width: 90vw;
+      height: 450px;
+      background-color: var(--terminal-bg);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      border-radius: 10px;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.5), var(--glow-primary);
+      overflow: hidden;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 100;
+      opacity: 0;
+      transition: all 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    
+    .terminal-header {
+      height: 36px;
+      padding: 0 15px;
+      background: linear-gradient(90deg, rgba(12, 12, 30, 0.9), rgba(20, 20, 60, 0.9));
+      border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .terminal-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+      opacity: 0.7;
+    }
+    
+    .terminal-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .terminal-button {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    
+    .close-button {
+      background-color: #ff3b30;
+    }
+    
+    .minimize-button {
+      background-color: #ffcc00;
+    }
+    
+    .maximize-button {
+      background-color: #34c759;
+    }
+    
+    .terminal-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--primary-color);
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    
+    .terminal-content {
+      height: calc(100% - 36px);
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      font-family: var(--font-mono);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 229, 255, 0.5) rgba(10, 10, 20, 0.5);
+      background-color: rgba(10, 10, 25, 0.95);
+    }
+    
+    .terminal-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .terminal-content::-webkit-scrollbar-track {
+      background: rgba(10, 10, 20, 0.5);
+    }
+    
+    .terminal-content::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 229, 255, 0.5);
+      border-radius: 3px;
+    }
+    
+    .terminal-output {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      line-height: 1.5;
+      text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+      opacity: 0.9;
+    }
+    
+    .terminal-input-line {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+      opacity: 0;
+      visibility: hidden;
+    }
+    
+    .terminal-prompt {
+      color: var(--primary-color);
+      margin-right: 8px;
+      user-select: none;
+      font-weight: bold;
+    }
+    
+    #terminal-input {
+      flex-grow: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--secondary-color);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      caret-color: var(--secondary-color);
+    }
+    
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 18px;
+      background-color: var(--primary-color);
+      box-shadow: 0 0 8px var(--primary-color);
+      animation: blink 1s step-end infinite;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    
+    /* Presentation container */
+    .presentation-container {
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+      top: 0;
+      left: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+      opacity: 0;
+      visibility: hidden;
+      overflow: hidden;
+    }
+    
+    /* Scenes */
+    .scene {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    
+    .scene-content {
+      width: 90%;
+      max-width: 1400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0 20px;
+    }
+    
+    .scene-title {
+      font-family: var(--font-display);
+      font-size: 3.5rem;
+      font-weight: 700;
+      color: var(--primary-color);
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+      letter-spacing: 2px;
+      text-shadow: var(--glow-primary);
+      text-align: center;
+    }
+    
+    .scene-description {
+      font-family: var(--font-mono);
+      font-size: 1.4rem;
+      color: var(--text-color);
+      text-align: center;
+      margin-bottom: 2rem;
+      max-width: 800px;
+      line-height: 1.6;
+      background-color: var(--code-bg);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      box-shadow: var(--glow-primary);
+      min-height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Gallery */
+    .gallery {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      width: 100%;
+      margin-top: 2rem;
+      min-height: 350px;
+      flex-wrap: wrap;
+    }
+    
+    .gallery-item {
+      position: relative;
+      width: 28%;
+      max-width: 350px;
+      min-width: 250px;
+      height: 350px;
+      background-color: #111;
+      border-radius: 10px;
+      overflow: hidden;
+      opacity: 0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: all 0.5s ease;
+    }
+    
+    .gallery-item::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to bottom, transparent 70%, rgba(0, 0, 0, 0.8));
+      pointer-events: none;
+    }
+    
+    .gallery-item-caption {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      color: var(--text-color);
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      z-index: 1;
+      opacity: 0.9;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Code panels */
+    .code-panel {
+      position: absolute;
+      width: 300px;
+      max-width: 90vw;
+      background-color: var(--code-bg);
+      border-radius: 8px;
+      padding: 15px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--text-color);
+      z-index: 20;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), var(--glow-primary);
+      opacity: 0;
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      transition: all 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+    }
+    
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+    }
+    
+    .code-title {
+      font-weight: 500;
+      color: var(--primary-color);
+    }
+    
+    .code-close {
+      cursor: pointer;
+      color: var(--text-color);
+      font-size: 20px;
+      opacity: 0.7;
+      transition: opacity 0.2s, color 0.2s;
+    }
+    
+    .code-close:hover {
+      opacity: 1;
+      color: var(--primary-color);
+    }
+    
+    .code-content {
+      line-height: 1.5;
+      max-height: 300px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 229, 255, 0.5) rgba(10, 10, 20, 0.5);
+    }
+    
+    .code-content::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .code-content::-webkit-scrollbar-track {
+      background: rgba(10, 10, 20, 0.5);
+    }
+    
+    .code-content::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 229, 255, 0.5);
+      border-radius: 2px;
+    }
+    
+    /* Syntax highlighting */
+    .code-keyword { color: #ff7edb; }
+    .code-function { color: #00aaff; }
+    .code-string { color: #3ad900; }
+    .code-number { color: #ff9d00; }
+    .code-comment { color: #676B79; }
+    .code-variable { color: #9effff; }
+    .code-operator { color: #ff5680; }
+    
+    /* Final message scene */
+    .final-scene {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .birthday-message {
+      position: relative;
+      width: 750px;
+      max-width: 90%;
+      background-color: var(--panel-bg);
+      border-radius: 15px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), var(--glow-primary);
+      border: 1px solid rgba(0, 229, 255, 0.3);
+      opacity: 0;
+      transition: all 1s cubic-bezier(0.33, 1, 0.68, 1);
+      backdrop-filter: blur(10px);
+      z-index: 10;
+    }
+    
+    .message-title {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      margin-bottom: 2rem;
+      color: var(--primary-color);
+      text-shadow: var(--glow-primary);
+      letter-spacing: 1px;
+    }
+    
+    .message-content {
+      font-family: var(--font-text);
+      font-size: 1.2rem;
+      line-height: 1.8;
+      margin-bottom: 2rem;
+      color: var(--text-color);
+    }
+    
+    .message-signature {
+      font-family: var(--font-text);
+      font-style: italic;
+      font-size: 1.4rem;
+      margin-top: 2rem;
+      color: var(--secondary-color);
+    }
+    
+    /* Controls */
+    .presentation-controls {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      display: flex;
+      gap: 15px;
+      z-index: 150;
+      opacity: 0;
+    }
+    
+    .control-button {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: rgba(10, 10, 25, 0.7);
+      border: 2px solid rgba(0, 229, 255, 0.4);
+      color: var(--primary-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: var(--glow-primary);
+      backdrop-filter: blur(5px);
+      transition: all 0.3s ease;
+    }
+    
+    .control-button:hover {
+      background-color: rgba(0, 229, 255, 0.2);
+      transform: translateY(-5px);
+    }
+    
+    /* Heads-up display */
+    .hud-overlay {
+      position: fixed;
+      bottom: 20px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      z-index: 120;
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .hud-text {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      color: var(--primary-color);
+      text-shadow: var(--glow-primary);
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 5px 15px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+    
+    /* Fullscreen button */
+    .fullscreen-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--code-bg);
+      border: 1px solid var(--primary-color);
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--glow-primary);
+      transition: all 0.3s;
+      opacity: 0.7;
+    }
+    
+    .fullscreen-toggle:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Audio element for background music -->
+  <audio id="background-music" loop preload="auto">
+    <source src="https://cdn.pixabay.com/download/audio/2021/11/25/audio_cb4f1f8c29.mp3?filename=moment-14023.mp3" type="audio/mpeg">
+    <source src="Wolves.mp3" type="audio/mpeg">
+  </audio>
+  
+  <!-- Audio controls -->
+  <div class="audio-controls">
+    <button id="music-toggle" class="music-toggle">
+      <i class="fas fa-volume-mute" id="volume-icon"></i>
+    </button>
+  </div>
+  
+  <!-- Fullscreen toggle -->
+  <div class="fullscreen-toggle" id="fullscreen-toggle">
+    <i class="fas fa-expand" id="fullscreen-icon"></i>
+  </div>
+  
+  <!-- Background elements -->
+  <div class="starfield" id="starfield"></div>
+  <div class="grid-background"></div>
+  <div class="vignette"></div>
+  
+  <!-- Loading screen -->
+  <div class="loading-screen" id="loading-screen">
+    <h1 class="loading-title">Loading Dad OS v5.0</h1>
+    <div class="loading-progress-container">
+      <div class="loading-progress" id="loading-progress"></div>
+    </div>
+    <p class="loading-status" id="loading-status">Initializing system...</p>
+  </div>
+  
+  <!-- Terminal interface -->
+  <div class="terminal-container" id="terminal">
+    <div class="terminal-header">
+      <div class="terminal-buttons">
+        <div class="terminal-button close-button"></div>
+        <div class="terminal-button minimize-button"></div>
+        <div class="terminal-button maximize-button"></div>
+      </div>
+      <div class="terminal-title">Dad OS Terminal</div>
+    </div>
+    <div class="terminal-content">
+      <div class="terminal-output" id="boot-sequence"></div>
+      <div class="terminal-input-line" id="input-line">
+        <span class="terminal-prompt">dad@dados:~$</span>
+        <input type="text" id="terminal-input" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+  </div>
+  
+  <!-- Presentation container -->
+  <div class="presentation-container" id="presentation-container">
+    <!-- College Scene -->
+    <div class="scene" id="scene-college">
+      <div class="scene-content">
+        <h2 class="scene-title">school and College Days</h2>
+        <div class="scene-description" id="college-description">
+          <div id="college-typing">College and school years: where knowledge was acquired and the foundations of brilliance established.</div>
+        </div>
+        <div class="gallery">
+          <div class="gallery-item">
+            <img src="college1.jpg" alt="College Days 1">
+            <div class="gallery-item-caption">school Year</div>
+          </div>
+          <div class="gallery-item">
+            <img src="placholder.png" alt="College Days 2">
+            <div class="gallery-item-caption">Study Sessions</div>
+          </div>
+          <div class="gallery-item">
+            <img src="placholder.png" alt="College Days 3">
+            <div class="gallery-item-caption">Graduation</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Code panel for this scene -->
+      <div class="code-panel" id="college-code-panel" style="top: 100px; right: 50px;">
+        <div class="code-header">
+          <div class="code-title">CollegeStudent.java</div>
+          <div class="code-close">&times;</div>
+        </div>
+        <pre class="code-content"><span class="code-keyword">class</span> <span class="code-function">CollegeStudent</span> {
+  <span class="code-keyword">constructor</span>() {
+    <span class="code-keyword">this</span>.<span class="code-variable">determination</span> = <span class="code-number">100</span>;
+    <span class="code-keyword">this</span>.<span class="code-variable">dreams</span> = [<span class="code-string">"coding"</span>, <span class="code-string">"success"</span>];
+  }
+  
+  <span class="code-function">studyHard</span>() {
+    <span class="code-keyword">return</span> <span class="code-string">"Future Dad OS in making!"</span>;
+  }
+}</pre>
+      </div>
+    </div>
+    
+    <!-- Career Scene -->
+    <div class="scene" id="scene-career">
+      <div class="scene-content">
+        <h2 class="scene-title">Career Journey</h2>
+        <div class="scene-description" id="career-description">
+          <div id="career-typing">Career journey: years of dedication, innovation, and leadership created a remarkable professional path.</div>
+        </div>
+        <div class="gallery">
+          <div class="gallery-item">
+            <img src="office1.jpg" alt="Career 1">
+            <div class="gallery-item-caption">First Job</div>
+          </div>
+          <div class="gallery-item">
+            <img src="office2.jpg" alt="Career 2">
+            <div class="gallery-item-caption">Professional Growth</div>
+          </div>
+          <div class="gallery-item">
+            <img src="office3.jpg" alt="Career 3">
+            <div class="gallery-item-caption">Leadership</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Code panel for this scene -->
+      <div class="code-panel" id="career-code-panel" style="top: 120px; right: 60px;">
+        <div class="code-header">
+          <div class="code-title">Career.ts</div>
+          <div class="code-close">&times;</div>
+        </div>
+        <pre class="code-content"><span class="code-keyword">class</span> <span class="code-function">Professional</span> {
+  <span class="code-variable">experience</span>: <span class="code-keyword">number</span> = <span class="code-number">0</span>;
+  <span class="code-variable">skills</span>: <span class="code-keyword">string</span>[] = [];
+  
+  <span class="code-function">solveProblems</span>() {
+    <span class="code-keyword">this</span>.<span class="code-variable">experience</span> += <span class="code-number">1</span>;
+    <span class="code-keyword">this</span>.<span class="code-variable">skills</span>.<span class="code-function">push</span>(<span class="code-string">"new skill"</span>);
+    <span class="code-keyword">return</span> <span class="code-string">"Solutions found!"</span>;
+  }
+}</pre>
+      </div>
+    </div>
+    
+    <!-- Family Scene -->
+    <div class="scene" id="scene-family">
+      <div class="scene-content">
+        <h2 class="scene-title">Marriage & Family</h2>
+        <div class="scene-description" id="family-description">
+          <div id="family-typing">Family life: where love variables equal infinity and the most meaningful memories are forever stored.</div>
+        </div>
+        <div class="gallery">
+          <div class="gallery-item">
+            <img src="marriage2.jpg" alt="Family 1">
+            <div class="gallery-item-caption">Wedding Day</div>
+          </div>
+          <div class="gallery-item">
+            <img src="family2.jpg" alt="Family 2">
+            <div class="gallery-item-caption">Precious Moments</div>
+          </div>
+          <div class="gallery-item">
+            <img src="family3.jpg" alt="Family 3">
+            <div class="gallery-item-caption">Family Adventures</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Code panel for this scene -->
+      <div class="code-panel" id="family-code-panel" style="top: 100px; right: 50px;">
+        <div class="code-header">
+          <div class="code-title">Family.php</div>
+          <div class="code-close">&times;</div>
+        </div>
+        <pre class="code-content"><span class="code-keyword">class</span> <span class="code-function">FamilyMan</span> {
+  <span class="code-keyword">function</span> <span class="code-function">__construct</span>() {
+    <span class="code-variable">$this</span>-><span class="code-variable">love</span> = <span class="code-string">"unlimited"</span>;
+    <span class="code-variable">$this</span>-><span class="code-variable">dadJokes</span> = [];
+    <span class="code-variable">$this</span>-><span class="code-variable">memories</span> = [];
+  }
+  
+  <span class="code-keyword">function</span> <span class="code-function">createMemory</span>(<span class="code-variable">$moment</span>) {
+    <span class="code-variable">$this</span>-><span class="code-variable">memories</span>[] = <span class="code-variable">$moment</span>;
+  }
+}</pre>
+      </div>
+    </div>
+    
+    <!-- Transformation Scene -->
+    <div class="scene" id="scene-transformation">
+      <div class="scene-content">
+        <h2 class="scene-title">Transformation</h2>
+        <div class="scene-description" id="transformation-description">
+          <div id="transformation-typing">Personal growth: continuous improvement and transformation define the journey to becoming legendary.</div>
+        </div>
+        <div class="gallery">
+          <div class="gallery-item">
+            <img src="transformation1.jpg" alt="Transformation 1">
+            <div class="gallery-item-caption">New Beginnings</div>
+          </div>
+          <div class="gallery-item">
+            <img src="transformation2.jpg" alt="Transformation 2">
+            <div class="gallery-item-caption">Growth Journey</div>
+          </div>
+          <div class="gallery-item">
+            <img src="transformation3.jpg" alt="Transformation 3">
+            <div class="gallery-item-caption">Achievements</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Code panel for this scene -->
+      <div class="code-panel" id="transformation-code-panel" style="top: 100px; right: 50px;">
+        <div class="code-header">
+          <div class="code-title">Hobbies.rb</div>
+          <div class="code-close">&times;</div>
+        </div>
+        <pre class="code-content"><span class="code-keyword">class</span> <span class="code-function">PassionateDad</span>
+  <span class="code-keyword">def</span> <span class="code-function">initialize</span>
+    <span class="code-variable">@energy</span> = <span class="code-number">100</span>
+    <span class="code-variable">@hobbies</span> = [<span class="code-string">"coding"</span>, <span class="code-string">"photography"</span>]
+    <span class="code-variable">@skills</span> = {<span class="code-string">"teaching"</span> => <span class="code-string">"expert"</span>}
+  <span class="code-keyword">end</span>
+  
+  <span class="code-keyword">def</span> <span class="code-function">share_knowledge</span>
+    <span class="code-string">"Creating memories!"</span>
+  <span class="code-keyword">end</span>
+<span class="code-keyword">end</span></pre>
+      </div>
+    </div>
+    
+    <!-- Final Scene -->
+    <div class="scene" id="scene-final">
+      <div class="final-scene">
+        <div class="birthday-message" id="birthday-message">
+          <h3 class="message-title">Dad, You're My Hero</h3>
+          <div class="message-content">
+            Dad, on your 50th birthday, I just want to say thank you for everything. You've always been my biggest supporter and my hero.
+            <br><br>
+            From teaching me how to code to showing me what it means to be a good person, your influence on my life is immeasurable. Your wisdom, patience, and unconditional love have shaped me into the person I am today.
+            <br><br>
+            Happy 50th Birthday to the best dad in the world! I love you more than words can express.
+          </div>
+          <div class="message-signature">Love always, Ved</div>
+        </div>
+        
+        <!-- Code panels for final scene -->
+        <div class="code-panel" id="final-code-panel1" style="top: 80px; right: 40px;">
+          <div class="code-header">
+            <div class="code-title">DadOS.js</div>
+            <div class="code-close">&times;</div>
+          </div>
+          <pre class="code-content"><span class="code-keyword">class</span> <span class="code-function">DadOS</span> {
+  <span class="code-keyword">constructor</span>() {
+    <span class="code-keyword">this</span>.<span class="code-variable">version</span> = <span class="code-number">5.0</span>;
+    <span class="code-keyword">this</span>.<span class="code-variable">uptime</span> = <span class="code-number">50</span> * <span class="code-number">365</span> * <span class="code-number">24</span>;
+    <span class="code-keyword">this</span>.<span class="code-variable">status</span> = <span class="code-string">"Legendary"</span>;
+  }
+  
+  <span class="code-function">celebrate</span>() {
+    <span class="code-keyword">return</span> <span class="code-string">"50 years of awesome!"</span>;
+  }
+}</pre>
+        </div>
+        
+        <div class="code-panel" id="final-code-panel2" style="bottom: 80px; left: 40px;">
+          <div class="code-header">
+            <div class="code-title">Birthday.py</div>
+            <div class="code-close">&times;</div>
+          </div>
+          <pre class="code-content"><span class="code-keyword">class</span> <span class="code-function">Celebration</span>:
+  <span class="code-keyword">def</span> <span class="code-function">__init__</span>(<span class="code-variable">self</span>):
+    <span class="code-variable">self</span>.<span class="code-variable">reason</span> = <span class="code-string">"Dad's 50th"</span>
+    <span class="code-variable">self</span>.<span class="code-variable">joy_level</span> = <span class="code-number">100</span>
+    <span class="code-variable">self</span>.<span class="code-variable">memories</span> = []
+  
+  <span class="code-keyword">def</span> <span class="code-function">add_memory</span>(<span class="code-variable">self</span>):
+    <span class="code-variable">self</span>.<span class="code-variable">memories</span>.append(
+      <span class="code-string">"Best Dad Ever"</span>
+    )</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- HUD Overlay -->
+  <div class="hud-overlay" id="hud-overlay">
+    <div class="hud-text" id="hud-text">Press SPACE to pause | RIGHT ARROW for next</div>
+  </div>
+  
+  <!-- Controls -->
+  <div class="presentation-controls" id="presentation-controls">
+    <button class="control-button" id="pause-button">
+      <i class="fas fa-pause"></i>
+    </button>
+    <button class="control-button" id="play-button" style="display: none;">
+      <i class="fas fa-play"></i>
+    </button>
+    <button class="control-button" id="next-button">
+      <i class="fas fa-forward"></i>
+    </button>
+  </div>
+  
+  <script>
+    // Global variables
+    let masterTimeline = null;
+    let isPaused = false;
+    let presentationActive = false;
+    let currentScene = 0;
+    let musicPlaying = false;
+    const scenes = ["college", "career", "family", "transformation", "final"];
+    const transitionDuration = 0.5;
+    const sceneDuration = 8; // How long each scene stays visible
+    
+    // DOM Elements
+    const terminal = document.getElementById("terminal");
+    const bootSequence = document.getElementById("boot-sequence");
+    const terminalInput = document.getElementById("terminal-input");
+    const presentationContainer = document.getElementById("presentation-container");
+    const loadingScreen = document.getElementById("loading-screen");
+    const pauseButton = document.getElementById("pause-button");
+    const playButton = document.getElementById("play-button");
+    const nextButton = document.getElementById("next-button");
+    const presentationControls = document.getElementById("presentation-controls");
+    const hudOverlay = document.getElementById("hud-overlay");
+    const hudText = document.getElementById("hud-text");
+    const backgroundMusic = document.getElementById("background-music");
+    const musicToggle = document.getElementById("music-toggle");
+    const volumeIcon = document.getElementById("volume-icon");
+    const fullscreenToggle = document.getElementById("fullscreen-toggle");
+    const fullscreenIcon = document.getElementById("fullscreen-icon");
+    
+    // ==================== INITIALIZATION ====================
+    
+    // Document ready
+    document.addEventListener("DOMContentLoaded", function() {
+      // Set background music volume
+      if (backgroundMusic) {
+        backgroundMusic.volume = 0.4;
+      }
+      
+      // Create starfield
+      createStarfield();
+      
+      // Start loading sequence
+      simulateLoading();
+      
+      // Set up event listeners
+      setupEventListeners();
+    });
+    
+    // Create starfield
+    function createStarfield() {
+      const starfield = document.getElementById("starfield");
+      if (!starfield) return;
+      
+      const starsCount = 150;
+      
+      for (let i = 0; i < starsCount; i++) {
+        const star = document.createElement("div");
+        star.className = "star";
+        
+        // Random size (0.5px to 3px)
+        const size = Math.random() * 2.5 + 0.5;
+        star.style.width = `${size}px`;
+        star.style.height = `${size}px`;
+        
+        // Random position
+        star.style.left = `${Math.random() * 100}%`;
+        star.style.top = `${Math.random() * 100}%`;
+        
+        // Random brightness
+        star.style.opacity = Math.random() * 0.8 + 0.2;
+        
+        starfield.appendChild(star);
+        
+        // Add subtle animation
+        animateStar(star);
+      }
+    }
+    
+    // Animate individual star
+    function animateStar(star) {
+      // Simple twinkle animation
+      gsap.to(star, {
+        opacity: Math.random() * 0.5 + 0.1,
+        duration: Math.random() * 3 + 2,
+        repeat: -1,
+        yoyo: true
+      });
+    }
+    
+    // Setup event listeners
+    function setupEventListeners() {
+      // Music toggle button
+      if (musicToggle) {
+        musicToggle.addEventListener("click", toggleMusic);
+      }
+      
+      // Fullscreen toggle
+      if (fullscreenToggle) {
+        fullscreenToggle.addEventListener("click", toggleFullScreen);
+      }
+      
+      // Terminal input handler
+      if (terminalInput) {
+        terminalInput.addEventListener("keypress", handleTerminalInput);
+      }
+      
+      // Play/pause buttons - fixed with direct function implementation
+      if (pauseButton) {
+        pauseButton.addEventListener("click", function() {
+          pausePresentation();
+        });
+      }
+      
+      if (playButton) {
+        playButton.addEventListener("click", function() {
+          resumePresentation();
+        });
+      }
+      
+      // Next button
+      if (nextButton) {
+        nextButton.addEventListener("click", function() {
+          if (presentationActive) {
+            goToNextScene();
+          }
+        });
+      }
+      
+      // Code panel close buttons
+      document.querySelectorAll(".code-close").forEach(button => {
+        button.addEventListener("click", function() {
+          const panel = this.closest(".code-panel");
+          gsap.to(panel, {
+            opacity: 0,
+            scale: 0.9,
+            duration: 0.3,
+            onComplete: () => {
+              panel.style.display = "none";
+            }
+          });
+        });
+      });
+      
+      // Keyboard shortcuts
+      document.addEventListener("keydown", function(e) {
+        // Space to pause/play
+        if (e.code === "Space" && presentationActive) {
+          if (isPaused) {
+            resumePresentation();
+          } else {
+            pausePresentation();
+          }
+          e.preventDefault();
+        }
+        
+        // Right arrow for next scene
+        if (e.code === "ArrowRight" && presentationActive) {
+          goToNextScene();
+        }
+        
+        // Escape to exit presentation
+        if (e.code === "Escape" && presentationActive) {
+          endPresentation();
+        }
+        
+        // F key for fullscreen
+        if (e.code === "KeyF") {
+          toggleFullScreen();
+        }
+      });
+      
+      // Terminal focus when clicking on it
+      if (terminal) {
+        terminal.addEventListener("click", function() {
+          if (terminalInput) terminalInput.focus();
+        });
+      }
+    }
+    
+    // Pause presentation function - separate clear implementation
+    function pausePresentation() {
+      if (!isPaused && presentationActive) {
+        console.log("Pausing presentation");
+        // Pause all GSAP animations
+        gsap.globalTimeline.pause();
+        // Update UI
+        if (pauseButton) pauseButton.style.display = "none";
+        if (playButton) playButton.style.display = "flex";
+        // Update state
+        isPaused = true;
+        // Update HUD
+        if (hudText) hudText.textContent = "PAUSED | Press SPACE to resume";
+      }
+    }
+    
+    // Resume presentation function - separate clear implementation
+    function resumePresentation() {
+      if (isPaused && presentationActive) {
+        console.log("Resuming presentation");
+        // Resume all GSAP animations
+        gsap.globalTimeline.resume();
+        // Update UI
+        if (playButton) playButton.style.display = "none";
+        if (pauseButton) pauseButton.style.display = "flex";
+        // Update state
+        isPaused = false;
+        // Update HUD
+        if (hudText) hudText.textContent = `Scene ${currentScene + 1}/${scenes.length} | SPACE to pause | RIGHT ARROW for next`;
+      }
+    }
+    
+    // Toggle music function
+    function toggleMusic() {
+      if (musicPlaying) {
+        if (backgroundMusic) backgroundMusic.pause();
+        if (volumeIcon) volumeIcon.className = "fas fa-volume-mute";
+      } else {
+        if (backgroundMusic) {
+          backgroundMusic.play().catch(e => {
+            console.log("Audio autoplay blocked. User interaction required.");
+          });
+        }
+        if (volumeIcon) volumeIcon.className = "fas fa-volume-up";
+      }
+      musicPlaying = !musicPlaying;
+    }
+    
+    // Toggle fullscreen
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(e => {
+          console.log(`Error attempting to enable full-screen mode: ${e.message}`);
+        });
+        if (fullscreenIcon) fullscreenIcon.className = "fas fa-compress";
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+          if (fullscreenIcon) fullscreenIcon.className = "fas fa-expand";
+        }
+      }
+    }
+    
+    // ==================== LOADING SEQUENCE ====================
+    
+    // Simulate loading
+    function simulateLoading() {
+      const progressBar = document.getElementById("loading-progress");
+      const loadingStatus = document.getElementById("loading-status");
+      
+      if (!progressBar || !loadingStatus || !loadingScreen) {
+        console.error("Loading elements not found");
+        showTerminal();
+        return;
+      }
+      
+      const loadingTexts = [
+        "Loading system components...",
+        "Initializing memory...",
+        "Loading family photo database...",
+        "Compiling dad jokes...",
+        "Setting up celebration modules...",
+        "Starting Dad OS v5.0..."
+      ];
+      
+      let progress = 0;
+      const loadingInterval = setInterval(() => {
+        if (progress >= 100) {
+          clearInterval(loadingInterval);
+          loadingStatus.textContent = "System Ready!";
+          
+          // Wait a moment then show terminal
+          setTimeout(() => {
+            gsap.to(loadingScreen, {
+              opacity: 0,
+              duration: 1,
+              onComplete: () => {
+                loadingScreen.style.display = "none";
+                showTerminal();
+              }
+            });
+          }, 800);
+          
+          return;
+        }
+        
+        // Increment progress
+        progress += Math.random() * 3 + 1;
+        progress = Math.min(progress, 100);
+        progressBar.style.width = progress + "%";
+        
+        // Update loading text
+        if (progress <= 20) loadingStatus.textContent = loadingTexts[0];
+        else if (progress <= 40) loadingStatus.textContent = loadingTexts[1];
+        else if (progress <= 60) loadingStatus.textContent = loadingTexts[2];
+        else if (progress <= 80) loadingStatus.textContent = loadingTexts[3];
+        else if (progress < 100) loadingStatus.textContent = loadingTexts[4];
+        else loadingStatus.textContent = loadingTexts[5];
+      }, 100);
+    }
+    
+    // ==================== TERMINAL FUNCTIONS ====================
+    
+    // Show terminal with animation
+    function showTerminal() {
+      gsap.to(terminal, {
+        opacity: 1,
+        duration: 1,
+        onComplete: () => {
+          typeBootSequence();
+        }
+      });
+    }
+    
+    // Boot sequence typing effect
+    function typeBootSequence() {
+      const lines = [
+        "Initializing Dad OS kernel...",
+        "[OK] DadWisdom.framework v5.0 loaded",
+        "[OK] DadJokes.service initialized",
+        "[OK] BirthdayModule.bundle activated",
+        "[OK] Dad OS v5.0 fully initialized",
+        "",
+        "Dad OS 5.0 Copyright (c) 1973-2025",
+        "",
+        "Type 'help' for available commands."
+      ];
+      
+      let lineIndex = 0;
+      let charIndex = 0;
+      
+      // Clear any existing content
+      bootSequence.innerHTML = '<span class="cursor"></span>';
+      
+      function typeChar() {
+        if (lineIndex < lines.length) {
+          if (charIndex < lines[lineIndex].length) {
+            // Add character
+            bootSequence.innerHTML = bootSequence.innerHTML.replace('<span class="cursor"></span>', "");
+            bootSequence.innerHTML += lines[lineIndex][charIndex] + '<span class="cursor"></span>';
+            charIndex++;
+            
+            setTimeout(typeChar, Math.random() * 20 + 20);
+          } else {
+            // Move to next line
+            bootSequence.innerHTML = bootSequence.innerHTML.replace('<span class="cursor"></span>', "");
+            bootSequence.innerHTML += "<br>" + '<span class="cursor"></span>';
+            lineIndex++;
+            charIndex = 0;
+            
+            setTimeout(typeChar, 300);
+          }
+        } else {
+          // Typing completed, remove cursor and show input line
+          bootSequence.innerHTML = bootSequence.innerHTML.replace('<span class="cursor"></span>', "");
+          
+          // Show the input line
+          showInputLine();
+        }
+      }
+      
+      // Start typing
+      setTimeout(typeChar, 200);
+    }
+    
+    // Show input line
+    function showInputLine() {
+      gsap.to(document.getElementById("input-line"), {
+        opacity: 1,
+        visibility: "visible",
+        duration: 0.3,
+        onComplete: function() {
+          terminalInput.focus();
+        }
+      });
+    }
+    
+    // Handle terminal input
+    function handleTerminalInput(e) {
+      if (e.key === "Enter") {
+        const command = terminalInput.value.trim();
+        
+        // Clear input
+        terminalInput.value = "";
+        
+        // Create a new line for command echo
+        const commandEcho = document.createElement("div");
+        commandEcho.className = "terminal-output";
+        commandEcho.innerHTML = `<span style="color: var(--primary-color)">dad@dados:~$</span> <span style="color: var(--secondary-color)">${command}</span>`;
+        document.querySelector(".terminal-content").insertBefore(commandEcho, document.getElementById("input-line"));
+        
+        // Hide input line while processing
+        const inputLine = document.getElementById("input-line");
+        inputLine.style.opacity = 0;
+        inputLine.style.visibility = "hidden";
+        
+        // Process the command
+        processCommand(command);
+      }
+    }
+    
+    // Process command
+    function processCommand(command) {
+      switch(command.toLowerCase()) {
+        case "start_journey":
+          if (!presentationActive) {
+            presentationActive = true;
+            startPresentation();
+          } else {
+            displayCommandOutput(
+              ["Error: Celebration already in progress."],
+              "#ff3d7f"
+            );
+          }
+          break;
+          
+        case "help":
+          displayCommandOutput([
+            "Available commands:",
+            "  start_journey - Begin the 50th birthday celebration",
+            "  about         - Information about Dad OS",
+            "  help          - Display this help message",
+            "  clear         - Clear the terminal screen"
+          ]);
+          break;
+          
+        case "about":
+          displayCommandOutput([
+            "Dad OS v5.0",
+            "Copyright © " + new Date().getFullYear(),
+            "",
+            "Dad OS is a celebration of 50 incredible years!",
+            "Developed with love by your family.",
+            "",
+            "System Information:",
+            "- Dad v5.0 (Build 1973-" + new Date().getFullYear() + ")",
+            "- 50 Years of Experience",
+            "- Unlimited Wisdom Cache",
+            "- Heart Capacity: Infinite"
+          ]);
+          break;
+          
+        case "clear":
+          clearTerminal();
+          break;
+          
+        default:
+          displayCommandOutput(
+            ["Error: Command not recognized. Try 'help' for available commands."],
+            "#ff3d7f"
+          );
+      }
+    }
+    
+    // Display command output
+    function displayCommandOutput(lines, color) {
+      const outputElement = document.createElement("div");
+      outputElement.className = "terminal-output";
+      outputElement.style.color = color || "var(--primary-color)";
+      document.querySelector(".terminal-content").insertBefore(outputElement, document.getElementById("input-line"));
+      
+      let outputText = "";
+      lines.forEach((line, index) => {
+        outputText += line;
+        if (index < lines.length - 1) {
+          outputText += "\n";
+        }
+      });
+      
+      // Type out the output
+      let charIndex = 0;
+      const terminalContent = document.querySelector(".terminal-content");
+      
+      outputElement.innerHTML = "";
+      
+      function typeOutputChar() {
+        if (charIndex < outputText.length) {
+          // Handle newlines properly
+          if (outputText[charIndex] === "\n") {
+            outputElement.innerHTML += "<br>";
+          } else {
+            outputElement.innerHTML += outputText[charIndex];
+          }
+          
+          // Smooth scrolling
+          terminalContent.scrollTop = terminalContent.scrollHeight;
+          
+          charIndex++;
+          
+          // Check if this is the welcome back message (it contains "Birthday")
+          const isWelcomeBack = outputText.includes("Birthday");
+          // Use slower typing speed for welcome back message (40ms instead of 5ms)
+          const typingSpeed = isWelcomeBack ? 40 : 5;
+          
+          setTimeout(typeOutputChar, typingSpeed);
+        } else {
+          // Show input line again
+          showInputLine();
+          
+          // Final scroll adjustment
+          terminalContent.scrollTop = terminalContent.scrollHeight;
+        }
+      }
+      
+      typeOutputChar();
+    }
+    
+    // Clear terminal
+    function clearTerminal() {
+      const inputLine = document.getElementById("input-line");
+      const terminalContent = document.querySelector(".terminal-content");
+      
+      // Remove all output lines
+      while (terminalContent.firstChild) {
+        if (terminalContent.firstChild !== inputLine) {
+          terminalContent.removeChild(terminalContent.firstChild);
+        } else {
+          break;
+        }
+      }
+      
+      // Show input line again
+      showInputLine();
+    }
+    
+    // ==================== PRESENTATION FUNCTIONS ====================
+    
+    // Start presentation
+    function startPresentation() {
+      // Start music
+      if (backgroundMusic && !musicPlaying) {
+        backgroundMusic.play().catch(e => {
+          console.log("Audio autoplay blocked. User interaction required.");
+        });
+        musicPlaying = true;
+        if (volumeIcon) volumeIcon.className = "fas fa-volume-up";
+      }
+      
+      // Reset current scene
+      currentScene = 0;
+      
+      // Reset pause state
+      isPaused = false;
+      
+      // Make sure controls are in correct state
+      if (pauseButton) pauseButton.style.display = "flex";
+      if (playButton) playButton.style.display = "none";
+      
+      // Hide terminal
+      gsap.to(terminal, {
+        opacity: 0,
+        duration: 0.8,
+        onComplete: () => {
+          terminal.style.display = "none";
+          
+          // Show presentation container
+          presentationContainer.style.visibility = "visible";
+          gsap.to(presentationContainer, {
+            opacity: 1,
+            duration: 0.8
+          });
+          
+          // Show controls
+          gsap.to(presentationControls, {
+            opacity: 1,
+            duration: 0.8
+          });
+          
+          // Show HUD
+          gsap.to(hudOverlay, {
+            opacity: 1,
+            duration: 0.8
+          });
+          
+          // Show first scene
+          showScene(scenes[currentScene]);
+        }
+      });
+      
+      // Log state for debugging
+      console.log("Presentation started, isPaused:", isPaused);
+    }
+    
+    // Show a specific scene with enhanced animations
+    function showScene(sceneId) {
+      // Update HUD text
+      hudText.textContent = `Scene ${currentScene + 1}/${scenes.length} | SPACE to pause | RIGHT ARROW for next`;
+      
+      const scene = document.getElementById(`scene-${sceneId}`);
+      if (!scene) {
+        console.error(`Scene not found: ${sceneId}`);
+        return;
+      }
+      
+      // Get scene elements
+      const title = scene.querySelector(".scene-title");
+      const description = scene.querySelector(".scene-description");
+      const gallery = scene.querySelectorAll(".gallery-item");
+      const codePanel = scene.querySelector(".code-panel");
+      
+      // Show scene
+      scene.style.display = "flex";
+      
+      // Create animation timeline
+      const timeline = gsap.timeline({
+        onComplete: () => {
+          // When this scene is done, go to next scene automatically
+          if (!isPaused && currentScene < scenes.length - 1) {
+            setTimeout(() => {
+              hideScene(sceneId, () => {
+                currentScene++;
+                showScene(scenes[currentScene]);
+              });
+            }, sceneDuration * 1000);
+          } else if (!isPaused && currentScene === scenes.length - 1) {
+            // Last scene - wait longer then end presentation
+            setTimeout(() => {
+              hideScene(sceneId, endPresentation);
+            }, sceneDuration * 1.5 * 1000);
+          }
+        }
+      });
+      
+      // Animate title with underline effect
+      if (title) {
+        gsap.set(title, { opacity: 0, y: -30 });
+        timeline.to(title, {
+          opacity: 1,
+          y: 0,
+          duration: transitionDuration,
+          ease: "power2.out",
+          onComplete: () => {
+            title.classList.add("glow-animation");
+          }
+        });
+      }
+      
+      // Animate description
+      if (description) {
+        gsap.set(description, { opacity: 0, y: 20 });
+        timeline.to(description, {
+          opacity: 1,
+          y: 0,
+          duration: transitionDuration,
+          ease: "power2.out",
+          onComplete: () => {
+            description.classList.add("border-glow-animation");
+          }
+        }, "-=0.2");
+      }
+      
+      // Scene-specific animations
+      switch(sceneId) {
+        case "college":
+          // College scene animations
+          animateCollegeScene(scene, timeline, gallery, codePanel);
+          break;
+          
+        case "career":
+          // Career scene animations
+          animateCareerScene(scene, timeline, gallery, codePanel);
+          break;
+          
+        case "family":
+          // Family scene animations
+          animateFamilyScene(scene, timeline, gallery, codePanel);
+          break;
+          
+        case "transformation":
+          // Transformation scene animations
+          animateTransformationScene(scene, timeline, gallery, codePanel);
+          break;
+          
+        case "final":
+          // Final scene animations
+          animateFinalScene(scene, timeline);
+          break;
+      }
+    }
+    
+    // College scene specific animations
+    function animateCollegeScene(scene, timeline, gallery, codePanel) {
+      // Add scan line effect to description
+      const description = scene.querySelector(".scene-description");
+      if (description) {
+        description.classList.add("college-anim-element");
+      }
+      
+      // Animate gallery items with book-opening effect
+      if (gallery && gallery.length) {
+        gsap.set(gallery, { opacity: 0, rotationY: 90, transformOrigin: "left center" });
+        timeline.to(gallery, {
+          opacity: 1,
+          rotationY: 0,
+          stagger: 0.2,
+          duration: transitionDuration * 1.2,
+          ease: "back.out(1.7)"
+        }, "-=0.2");
+        
+        // Add caption reveal for each gallery item
+        gallery.forEach((item, index) => {
+          const caption = item.querySelector(".gallery-item-caption");
+          if (caption) {
+            gsap.set(caption, { opacity: 0, y: 20 });
+            timeline.to(caption, {
+              opacity: 1,
+              y: 0,
+              duration: 0.5,
+              delay: 0.3 + (index * 0.1)
+            });
+          }
+        });
+      }
+      
+      // Animate code panel with typing effect
+      if (codePanel) {
+        gsap.set(codePanel, { opacity: 0, scale: 0.9 });
+        timeline.to(codePanel, {
+          opacity: 1,
+          scale: 1,
+          duration: transitionDuration,
+          ease: "back.out(1.2)",
+          onComplete: () => {
+            // Add blinking cursor to the code
+            const codeContent = codePanel.querySelector(".code-content");
+            if (codeContent) {
+              const keywords = codeContent.querySelectorAll(".code-keyword");
+              keywords.forEach((keyword, index) => {
+                setTimeout(() => {
+                  keyword.classList.add("code-highlight");
+                }, index * 300);
+              });
+            }
+            
+            // Add floating animation
+            codePanel.classList.add("floating-animation");
+          }
+        }, "-=0.2");
+      }
+    }
+    
+    // Career scene specific animations
+    function animateCareerScene(scene, timeline, gallery, codePanel) {
+      // Animate gallery items with growth effect
+      if (gallery && gallery.length) {
+        gsap.set(gallery, { opacity: 0, y: 50, scale: 0.8 });
+        timeline.to(gallery, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          stagger: 0.2,
+          duration: transitionDuration,
+          ease: "power2.out",
+          onComplete: () => {
+            // Add growth indicators to each item
+            gallery.forEach(item => {
+              const growthIndicator = document.createElement("div");
+              growthIndicator.className = "career-growth-indicator";
+              item.appendChild(growthIndicator);
+            });
+          }
+        }, "-=0.2");
+      }
+      
+      // Animate code panel with experience growth
+      if (codePanel) {
+        gsap.set(codePanel, { opacity: 0, x: 30 });
+        timeline.to(codePanel, {
+          opacity: 1,
+          x: 0,
+          duration: transitionDuration,
+          ease: "power2.out",
+          onComplete: () => {
+            // Highlight experience line
+            const codeContent = codePanel.querySelector(".code-content");
+            if (codeContent) {
+              const experienceLine = codeContent.innerHTML.indexOf("experience") > -1 ? 
+                codeContent.innerHTML.split('\n')[1] : null;
+              
+              if (experienceLine) {
+                const codeLines = codeContent.innerHTML.split('\n');
+                codeLines[1] = `<span class="code-highlight">${codeLines[1]}</span>`;
+                codeContent.innerHTML = codeLines.join('\n');
+              }
+            }
+            
+            // Float animation for code panel
+            codePanel.classList.add("floating-animation");
+          }
+        }, "-=0.2");
+      }
+    }
+    
+    // Family scene specific animations
+    function animateFamilyScene(scene, timeline, gallery, codePanel) {
+      // Animate gallery items with family connections
+      if (gallery && gallery.length) {
+        gsap.set(gallery, { opacity: 0, scale: 0.8 });
+        timeline.to(gallery, {
+          opacity: 1,
+          scale: 1,
+          stagger: 0.2,
+          duration: transitionDuration,
+          ease: "back.out(1.7)",
+          onComplete: () => {
+            // Add connections between family photos
+            const galleryContainer = scene.querySelector(".gallery");
+            if (galleryContainer && gallery.length > 1) {
+              for (let i = 0; i < gallery.length - 1; i++) {
+                const item1 = gallery[i];
+                const item2 = gallery[i+1];
+                
+                const item1Rect = item1.getBoundingClientRect();
+                const item2Rect = item2.getBoundingClientRect();
+                
+                const connection = document.createElement("div");
+                connection.className = "family-connection";
+                
+                const galleryRect = galleryContainer.getBoundingClientRect();
+                
+                // Position and size the connection
+                connection.style.top = `${(item1Rect.top + item1Rect.height/2) - galleryRect.top}px`;
+                connection.style.left = `${(item1Rect.left + item1Rect.width) - galleryRect.left}px`;
+                connection.style.width = `${item2Rect.left - (item1Rect.left + item1Rect.width)}px`;
+                
+                galleryContainer.appendChild(connection);
+              }
+              
+              // Add heartbeat animation to middle photo
+              if (gallery.length >= 3) {
+                const middleItem = gallery[1];
+                const middleRect = middleItem.getBoundingClientRect();
+                
+                const heart = document.createElement("div");
+                heart.className = "heartbeat";
+                heart.style.top = `${middleRect.height/2 - 20}px`;
+                heart.style.left = `${middleRect.width/2 - 20}px`;
+                
+                middleItem.appendChild(heart);
+              }
+            }
+          }
+        }, "-=0.2");
+      }
+      
+      // Animate code panel
+      if (codePanel) {
+        gsap.set(codePanel, { opacity: 0, y: 30 });
+        timeline.to(codePanel, {
+          opacity: 1,
+          y: 0,
+          duration: transitionDuration,
+          ease: "back.out(1.2)",
+          onComplete: () => {
+            // Highlight love variable
+            const codeContent = codePanel.querySelector(".code-content");
+            if (codeContent) {
+              const loveLine = codeContent.innerHTML.indexOf("love") > -1 ? 
+                codeContent.innerHTML.split('\n')[2] : null;
+              
+              if (loveLine) {
+                const codeLines = codeContent.innerHTML.split('\n');
+                codeLines[2] = `<span class="code-highlight">${codeLines[2]}</span>`;
+                codeContent.innerHTML = codeLines.join('\n');
+              }
+            }
+            
+            // Pulse animation
+            codePanel.classList.add("pulse-animation");
+          }
+        }, "-=0.2");
+      }
+    }
+    
+    // Transformation scene specific animations
+    function animateTransformationScene(scene, timeline, gallery, codePanel) {
+      // Animate gallery items with transformation effect
+      if (gallery && gallery.length) {
+        gsap.set(gallery, { opacity: 0, scale: 0.7, rotate: -5 });
+        timeline.to(gallery, {
+          opacity: 1,
+          scale: 1,
+          rotate: 0,
+          stagger: 0.25,
+          duration: transitionDuration * 1.2,
+          ease: "power3.out",
+          onComplete: () => {
+            // Add transformation overlay to each image
+            gallery.forEach((item, index) => {
+              const overlay = document.createElement("div");
+              overlay.className = "transform-overlay";
+              item.appendChild(overlay);
+              
+              // Add achievement badges with staggered delay
+              setTimeout(() => {
+                const badge = document.createElement("div");
+                badge.className = "achievement-badge";
+                badge.innerHTML = `<i class="fas fa-star"></i>`;
+                item.appendChild(badge);
+              }, 500 + (index * 500));
+            });
+          }
+        }, "-=0.2");
+      }
+      
+      // Animate code panel
+      if (codePanel) {
+        gsap.set(codePanel, { opacity: 0, y: -30, x: 20 });
+        timeline.to(codePanel, {
+          opacity: 1,
+          y: 0,
+          x: 0,
+          duration: transitionDuration,
+          ease: "power2.out",
+          onComplete: () => {
+            // Add glow animation
+            codePanel.classList.add("glow-animation");
+            
+            // Add special effects to skills and energy
+            const codeContent = codePanel.querySelector(".code-content");
+            if (codeContent) {
+              // Highlight energy line
+              const energyLine = codeContent.innerHTML.indexOf("energy") > -1 ? 
+                codeContent.innerHTML.split('\n')[2] : null;
+              
+              if (energyLine) {
+                const codeLines = codeContent.innerHTML.split('\n');
+                codeLines[2] = `<span class="code-highlight">${codeLines[2]}</span>`;
+                codeContent.innerHTML = codeLines.join('\n');
+              }
+            }
+          }
+        }, "-=0.2");
+      }
+    }
+    
+    // Final scene animations
+    function animateFinalScene(scene, timeline) {
+      const message = document.getElementById("birthday-message");
+      const finalPanel1 = document.getElementById("final-code-panel1");
+      const finalPanel2 = document.getElementById("final-code-panel2");
+      
+      if (message) {
+        gsap.set(message, { opacity: 0, y: 30, scale: 0.95 });
+        timeline.to(message, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: transitionDuration * 1.5,
+          ease: "back.out(1.2)",
+          onComplete: () => {
+            // Add pulse animation
+            message.classList.add("pulse-animation");
+            
+            // Highlight title
+            const messageTitle = message.querySelector(".message-title");
+            if (messageTitle) {
+              messageTitle.classList.add("glow-animation");
+            }
+            
+            // Highlight signature
+            const signature = message.querySelector(".message-signature");
+            if (signature) {
+              signature.classList.add("glow-animation");
+            }
+          }
+        });
+      }
+      
+      if (finalPanel1) {
+        gsap.set(finalPanel1, { opacity: 0, x: 30, rotationY: 20 });
+        timeline.to(finalPanel1, {
+          opacity: 1,
+          x: 0,
+          rotationY: 0,
+          duration: transitionDuration * 1.2,
+          ease: "back.out(1.7)",
+          onComplete: () => {
+            finalPanel1.classList.add("floating-animation");
+          }
+        }, "-=0.5");
+      }
+      
+      if (finalPanel2) {
+        gsap.set(finalPanel2, { opacity: 0, x: -30, rotationY: -20 });
+        timeline.to(finalPanel2, {
+          opacity: 1,
+          x: 0,
+          rotationY: 0,
+          duration: transitionDuration * 1.2,
+          ease: "back.out(1.7)",
+          onComplete: () => {
+            finalPanel2.classList.add("floating-animation");
+          }
+        }, "-=0.8");
+      }
+    }
+    
+    // Hide a specific scene
+    function hideScene(sceneId, callback) {
+      const scene = document.getElementById(`scene-${sceneId}`);
+      if (!scene) {
+        if (callback) callback();
+        return;
+      }
+      
+      // If we're paused, don't animate the transition
+      if (isPaused) {
+        scene.style.display = "none";
+        if (callback) callback();
+        return;
+      }
+      
+      // Get scene elements
+      const title = scene.querySelector(".scene-title");
+      const description = scene.querySelector(".scene-description");
+      const gallery = scene.querySelectorAll(".gallery-item");
+      const codePanel = scene.querySelector(".code-panel");
+      
+      // Create animation timeline
+      const timeline = gsap.timeline({
+        onComplete: () => {
+          scene.style.display = "none";
+          if (callback) callback();
+        }
+      });
+      
+      // Special case for final scene
+      if (sceneId === "final") {
+        const message = document.getElementById("birthday-message");
+        const finalPanel1 = document.getElementById("final-code-panel1");
+        const finalPanel2 = document.getElementById("final-code-panel2");
+        
+        if (finalPanel1) {
+          timeline.to(finalPanel1, {
+            opacity: 0,
+            x: 30,
+            duration: transitionDuration,
+            ease: "power2.in"
+          });
+        }
+        
+        if (finalPanel2) {
+          timeline.to(finalPanel2, {
+            opacity: 0,
+            x: -30,
+            duration: transitionDuration,
+            ease: "power2.in"
+          }, "-=0.5");
+        }
+        
+        if (message) {
+          timeline.to(message, {
+            opacity: 0,
+            y: 30,
+            duration: transitionDuration,
+            ease: "power2.in"
+          }, "-=0.3");
+        }
+      } else {
+        // Animate code panel
+        if (codePanel) {
+          timeline.to(codePanel, {
+            opacity: 0,
+            scale: 0.9,
+            duration: transitionDuration * 0.8,
+            ease: "power2.in"
+          });
+        }
+        
+        // Animate gallery items
+        if (gallery && gallery.length) {
+          timeline.to(gallery, {
+            opacity: 0,
+            y: 30,
+            stagger: 0.1,
+            duration: transitionDuration * 0.8,
+            ease: "power2.in"
+          }, "-=0.3");
+        }
+        
+        // Animate description
+        if (description) {
+          timeline.to(description, {
+            opacity: 0,
+            y: 20,
+            duration: transitionDuration * 0.8,
+            ease: "power2.in"
+          }, "-=0.3");
+        }
+        
+        // Animate title
+        if (title) {
+          timeline.to(title, {
+            opacity: 0,
+            y: -30,
+            duration: transitionDuration * 0.8,
+            ease: "power2.in"
+          }, "-=0.3");
+        }
+      }
+    }
+    
+    // Go to next scene
+    function goToNextScene() {
+      if (currentScene < scenes.length - 1) {
+        hideScene(scenes[currentScene], () => {
+          currentScene++;
+          showScene(scenes[currentScene]);
+        });
+      } else if (currentScene === scenes.length - 1) {
+        // End presentation if on the last scene
+        hideScene(scenes[currentScene], endPresentation);
+      }
+    }
+    
+    // End presentation and return to terminal
+    function endPresentation() {
+      // Hide all scenes
+      scenes.forEach(scene => {
+        const sceneElement = document.getElementById(`scene-${scene}`);
+        if (sceneElement) sceneElement.style.display = "none";
+      });
+      
+      // Hide presentation container
+      gsap.to(presentationContainer, {
+        opacity: 0,
+        duration: 0.8,
+        onComplete: () => {
+          presentationContainer.style.visibility = "hidden";
+          
+          // Hide controls
+          gsap.to(presentationControls, {
+            opacity: 0,
+            duration: 0.4
+          });
+          
+          // Hide HUD
+          gsap.to(hudOverlay, {
+            opacity: 0,
+            duration: 0.4
+          });
+          
+          // Show terminal
+          terminal.style.display = "block";
+          gsap.to(terminal, {
+            opacity: 1,
+            duration: 0.8,
+            onComplete: () => {
+              // Show welcome back message
+              displayWelcomeBackMessage();
+              
+              // Reset presentation state
+              presentationActive = false;
+            }
+          });
+        }
+      });
+    }
+    
+    // Display welcome back message
+    function displayWelcomeBackMessage() {
+      const welcomeLines = [
+        "Celebration sequence complete.",
+        "Dad OS v5.0 has saved all memories to permanent storage.",
+        "Happy 50th Birthday, Dad! ❤️",
+      ];
+      
+      displayCommandOutput(welcomeLines);
+    }
+  </script>
+</body>
+</html>
